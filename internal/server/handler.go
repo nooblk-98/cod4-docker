@@ -9,6 +9,7 @@ import (
 )
 
 func newHandler(rootURL string, logger logging.Logger) http.Handler {
+	rootURL = strings.TrimRight(rootURL, "/")
 	fileServer := http.NewServeMux()
 	modsHandler := http.FileServer(http.Dir("./mods"))
 	modsHandler = http.StripPrefix(rootURL+"/mods/", modsHandler)
