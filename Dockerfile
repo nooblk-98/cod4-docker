@@ -1,5 +1,5 @@
 ARG BUILDPLATFORM=linux/amd64
-ARG DEBIAN_VERSION=buster-slim
+ARG DEBIAN_VERSION=bookworm-slim
 ARG ALPINE_VERSION=3.16
 ARG GO_VERSION=1.17
 ARG GOLANGCI_LINT_VERSION=v1.46.2
@@ -75,7 +75,7 @@ FROM debian:${DEBIAN_VERSION}
 RUN dpkg --add-architecture i386 && \
     apt-get update -qq && \
     apt-get install -qq --no-install-recommends \
-    libc6 libgcc1:i386 	libstdc++6:i386 ca-certificates && \
+    libc6 libgcc-s1:i386 libstdc++6:i386 ca-certificates && \
     apt-get autoremove -qq && \
     rm -rf /var/lib/apt/lists/*
 ARG UID=1000
