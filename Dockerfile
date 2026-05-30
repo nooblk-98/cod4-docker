@@ -33,27 +33,16 @@ RUN GOARCH="$(xcputranslate translate -field arch -targetplatform ${TARGETPLATFO
     -X 'main.commit=$COMMIT' \
     " -o entrypoint main.go
 
-FROM debian:${DEBIAN_VERSION} AS builder
-RUN dpkg --add-architecture i386 && \
-    apt-get -qq update && \
-    apt-get -qq install -y nasm:i386 build-essential gcc-multilib g++-multilib paxctl wget
-WORKDIR /cod4
-ARG COD4X_VERSION=20.1
-RUN wget -qO- https://github.com/callofduty4x/CoD4x_Server/archive/${COD4X_VERSION}.tar.gz | \
-    tar -xz --strip-components=1 && \
-    # sed -i 's/LINUX_LFLAGS=/LINUX_LFLAGS=-static /' makefile && \
-    make
-
 FROM --platform=${BUILDPLATFORM} alpine:${ALPINE_VERSION} AS downloader
 WORKDIR /tmp
-ARG COD4X_VERSION=20.1
-RUN apk add --update --no-cache -q --progress unzip && \
-    wget -qO cod4x_server-linux.zip https://cod4x.me/downloads/cod4x_server-linux_${COD4X_VERSION}.zip && \
+ARG COD4X_VERSION=21.2
+RUN apk add --update --no-cache -q --progress unzip wget && \
+    wget -qO cod4x_server-linux.zip https://cod4x.ovh/uploads/short-url/59kvOM9hBabZjPJRlLX029BcskI.zip && \
     unzip -q cod4x_server-linux.zip -d . && \
     rm cod4x_server-linux.zip && \
-    apk del unzip && \
-    dirname="cod4x_server-linux_20.0" && \
+    dirname="cod4x_server-linux_${COD4X_VERSION}" && \
     mv \
+    ${dirname}/cod4x-linux-server/cod4x18_dedrun \
     ${dirname}/cod4x-linux-server/main/xbase_00.iwd \
     ${dirname}/cod4x-linux-server/main/jcod4x_00.iwd \
     ${dirname}/cod4x-linux-server/zone/cod4x_patchv2.ff \
@@ -70,8 +59,8 @@ COPY --from=downloader \
     /tmp/cod4x_patchv2.ff \
     /tmp/steam_api.so \
     /tmp/steamclient.so \
+    /tmp/cod4x18_dedrun \
     ./
-COPY --from=builder /cod4/bin/cod4x18_dedrun .
 COPY server.cfg .
 COPY --from=entrypoint /tmp/gobuild/entrypoint .
 RUN touch autoupdate.lock cod4x18_dedrun.new steam_api.so.new

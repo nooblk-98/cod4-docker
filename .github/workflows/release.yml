@@ -1,35 +1,59 @@
-name: Release build
+name: Build and Release
+
 on:
-  release:
-    types: [published]
-    paths:
-      - .github/workflows/release.yml
-      - cmd/**
-      - internal/**
-      - .dockerignore
-      - .golangci.yml
-      - Dockerfile
-      - go.mod
-      - go.sum
-      - server.cfg
+  push:
+    branches: [master]
+    tags: ['*']
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  buildx:
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
     steps:
-      - uses: actions/checkout@v2
-      - name: Buildx setup
-        uses: crazy-max/ghaction-docker-buildx@v3
-      - name: Dockerhub login
-        run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u qmcgaw --password-stdin 2>&1
-      - name: Build
-        run: |
-          docker buildx build \
-            --progress plain \
-            --platform=linux/amd64,linux/386 \
-            --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
-            --build-arg COMMIT=`git rev-parse --short HEAD` \
-            --build-arg VERSION=${GITHUB_REF##*/} \
-            -t qmcgaw/cod4:${GITHUB_REF##*/} \
-            --push \
-            .
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=tag
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          build-args: |
+            BUILD_DATE=${{ github.event.repository.updated_at }}
+            COMMIT=${{ github.sha }}
+            VERSION=${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
