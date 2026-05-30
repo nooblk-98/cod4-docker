@@ -1,158 +1,213 @@
 # COD4 Docker dedicated server
 
-Call of duty 4 dedicated server in a 125MB Docker image.
+[![Docker Cod4](images/title.png)](https://github.com/qdm12/cod4-docker)
 
-[![Docker Cod4](https://github.com/qdm12/cod4-docker/raw/master/images/title.png)](https://hub.docker.com/r/qmcgaw/cod4/)
-
-[![Build status](https://github.com/qdm12/cod4-docker/workflows/Buildx%20latest/badge.svg)](https://github.com/qdm12/cod4-docker/actions?query=workflow%3A%22Buildx+latest%22)
+[![Build status](https://github.com/qdm12/cod4-docker/actions/workflows/release.yml/badge.svg)](https://github.com/qdm12/cod4-docker/actions/workflows/release.yml)
 [![Docker Pulls](https://img.shields.io/docker/pulls/qmcgaw/cod4.svg)](https://hub.docker.com/r/qmcgaw/cod4)
-[![Docker Stars](https://img.shields.io/docker/stars/qmcgaw/cod4.svg)](https://hub.docker.com/r/qmcgaw/cod4)
+[![GitHub release](https://img.shields.io/github/v/release/qdm12/cod4-docker)](https://github.com/qdm12/cod4-docker/releases)
+[![Image size](https://img.shields.io/docker/image-size/qmcgaw/cod4/latest)](https://hub.docker.com/r/qmcgaw/cod4)
 
-[![GitHub last commit](https://img.shields.io/github/last-commit/qdm12/cod4-docker.svg)](https://github.com/qdm12/cod4-docker/issues)
-[![GitHub commit activity](https://img.shields.io/github/commit-activity/y/qdm12/cod4-docker.svg)](https://github.com/qdm12/cod4-docker/issues)
-[![GitHub issues](https://img.shields.io/github/issues/qdm12/cod4-docker.svg)](https://github.com/qdm12/cod4-docker/issues)
+Call of Duty 4: Modern Warfare dedicated server in a ~125 MB Docker image using the [Cod4x](https://github.com/callofduty4x/CoD4x_Server) community server fork.
 
-[![Join Slack channel](https://img.shields.io/badge/slack-@qdm12-yellow.svg?logo=slack)](https://join.slack.com/t/qdm12/shared_invite/enQtOTE0NjcxNTM1ODc5LTYyZmVlOTM3MGI4ZWU0YmJkMjUxNmQ4ODQ2OTAwYzMxMTlhY2Q1MWQyOWUyNjc2ODliNjFjMDUxNWNmNzk5MDk)
-
-[![Donate PayPal](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/qmcgaw)
+> **Note:** This image is also available on [GitHub Container Registry](ghcr.io/qdm12/cod4-docker).
 
 ## Requirements
 
-- COD4 Client game
-- COD4 running on version 1.7 have to [update to 1.8-20.1](#update-your-game)
-- Original COD4 **main** and **zone** files required (from the client installation directory)
+- COD4 game client (version 1.8+)
+- Original COD4 `main/` and `zone/` files from your client installation
 
 ## Features
 
-- [Cod4x server features](https://github.com/callofduty4x/CoD4x_Server#the-most-prominent-features-are)
-- Works with custom mods and maps (see the [Mods section](#Mods))
-- Built-in HTTP file server for usermaps and mods (only works with .ff and .iwd files for security reasons)
-- Runs without root (safer)
-- Default cod4 configuration file [server.cfg](https://github.com/qdm12/cod4-docker/blob/master/server.cfg) when not using mods, with `exec server.cfg`
-- Works with the cod4x masterlist
-- [Cod4x](https://github.com/callofduty4x/CoD4x_Server) server built from source
-- Other Cod4x files server downloaded from [cod4x.me](https://cod4x.me)
-- Auto updates to the latest cod4x release
-- Only 125MB
-- See more Docker image tags: [Docker Hub tags](https://hub.docker.com/repository/docker/qmcgaw/cod4/tags)
+- **Cod4x server** — latest Cod4x build downloaded from [cod4x.me](https://cod4x.me), auto-updates supported
+- **Custom mods & maps** — drop `.ff` and `.iwd` files into the appropriate volumes
+- **Built-in HTTP file server** — serves mods and usermaps on port `8000` so clients download custom content automatically
+- **Non-root runtime** — container runs as an unprivileged user for better security
+- **Default server config** — production-ready [`server.cfg`](server.cfg) with sensible defaults
+- **Works with the Cod4x masterlist** — server is visible to the public by default
+- **Multi-arch** — built via Docker Buildx; currently published for `linux/amd64`
+- **Minimal size** — ~125 MB compressed
 
-## Setup
+## Quick start
 
-We assume your *call of duty 4 game* is installed at `/mycod4path`
+### 1. Prepare directories
 
-1. On your host, create the directories `./main`, `./zone`, `./mods` and `./usermaps`.
-1. From your Call of Duty 4 installation directory:
-    - Copy all the `.iwd` files from `/mycod4path/main` to `./main`
-    - Copy all the files from `/mycod4path/zone` to `./zone`
-    - (Optional) Copy the mods you want to use from `/mycod4path/mods` to `./mods`
-    - (Optional) Copy the maps you want to use from `/mycod4path/usermaps` to `./usermaps`
-1. As the container runs as user ID 1000 by default, fix the ownership and permissions:
+```bash
+mkdir -p main zone mods usermaps logs
+```
 
-    ```bash
-    chown -R 1000 main mods usermaps zone
-    chmod -R 700 main mods usermaps zone
-    ```
+### 2. Copy game files
 
-    You can also run the container with `--user="root"` (unadvised!) if this doesn't work, or build the image with `--build-arg UID=yourid`.
+From your COD4 installation directory:
 
-1. Run the following command as root user on your host:
+```bash
+cp /path/to/cod4/main/*.iwd ./main/
+cp /path/to/cod4/zone/*    ./zone/
+```
 
-    ```bash
-    docker run -d --name=cod4 -p 28960:28960/tcp -p 28960:28960/udp -p 8000:8000/tcp \
-        -v /mycod4path/main:/home/user/cod4/main \
-        -v /mycod4path/zone:/home/user/cod4/zone \
-        -v /mycod4path/mods:/home/user/cod4/mods \
-        -v /mycod4path/usermaps:/home/user/cod4/usermaps:ro \
-        qmcgaw/cod4 +map mp_shipment
-    ```
+Optional: copy mods and custom maps
 
-    The command line argument `+map mp_shipment` is optional and defaults to `+set dedicated 2+set sv_cheats "1"+set sv_maxclients "64"+exec server.cfg+map_rotate`
+```bash
+cp -r /path/to/cod4/mods/*    ./mods/
+cp -r /path/to/cod4/usermaps/* ./usermaps/
+```
 
-    You can also download and modify the [*docker-compose.yml*](https://raw.githubusercontent.com/qdm12/cod4-docker/master/docker-compose.yml) file and run
+### 3. Fix ownership
 
-    ```bash
-    docker-compose up -d
-    ```
+The container runs as user ID `1000` by default:
 
-### HTTP server for custom mods and maps
+```bash
+sudo chown -R 1000:1000 main zone mods usermaps logs
+chmod -R 700 main zone mods usermaps
+```
 
-By default, the container runs with an HTTP file server for mods and usermaps on port `8000`.
+To use a different UID/GID, rebuild with `--build-arg UID=yourid --build-arg GID=yourgid`.
 
-- You can disable it with `-e HTTP_SERVER=off`
-- You can change its published port with for example `-p 9000:8000/tcp`
-- You can change its root URL with for example `-e ROOT_URL=/cod4`. This is useful if you use a reverse proxy.
+### 4. Run
 
-1. Locate the relevant cod4 configuration file - for example `main/server.cfg` or `mods/mymod/server.cfg`
-1. Modify/add the following lines & change `youraddress` to your IP or domain name:
+```bash
+docker run -d --name=cod4 \
+  -p 28960:28960/tcp -p 28960:28960/udp -p 8000:8000/tcp \
+  -v $(pwd)/main:/home/user/cod4/main \
+  -v $(pwd)/zone:/home/user/cod4/zone \
+  -v $(pwd)/mods:/home/user/cod4/mods \
+  -v $(pwd)/usermaps:/home/user/cod4/usermaps:ro \
+  -v $(pwd)/logs:/home/user/.callofduty4 \
+  qmcgaw/cod4 +map mp_shipment
+```
 
-    ```c
-    set sv_allowdownload "1"
-    set sv_wwwDownload "1"
-    set sv_wwwBaseURL "http://youraddress:8000" // supports http, https and ftp addresses
-    set sv_wwwDlDisconnected "0"
-    ```
+Or with Docker Compose:
 
-1. Feel free to open an issue for help setting this up, such as port forwarding or reverse proxy setup help
+```yaml
+# docker-compose.yml
+services:
+  cod4:
+    image: qmcgaw/cod4
+    container_name: cod4
+    ports:
+      - 28960:28960/udp
+      - 28960:28960/tcp
+      - 8000:8000/tcp
+    volumes:
+      - ./main:/home/user/cod4/main
+      - ./zone:/home/user/cod4/zone
+      - ./mods:/home/user/cod4/mods
+      - ./usermaps:/home/user/cod4/usermaps:ro
+      - ./logs:/home/user/.callofduty4
+    environment:
+      - HTTP_SERVER=on
+      - ROOT_URL=/
+    command: +set dedicated 2 +set sv_cheats 1 +set sv_maxclients 64 +set ui_maxclients 64 +exec server.cfg +map_rotate
+    restart: always
+```
 
-## Update your game
+```bash
+docker compose up -d
+```
 
-1. Make sure you updated your game to version 1.7 first (see [this](https://cod4x.me/index.php?/forums/topic/12-how-to-install-cod4x/))
-1. Download the [COD4x client ZIP file](https://cod4x.me/downloads/cod4x_client_20_1.zip)
-1. Using Winrar / 7Zip / Winzip, extract **cod4x_client_20_1.zip** to your COD4 game directory
-1. Go in the extracted directory *cod4-client-manualinstall_20.1* and double click on **install.cmd**
-1. When launching the multiplayer game, you should see at the bottom right `20.1`
+> The default command is `+set dedicated 2 +set sv_cheats "1" +set sv_maxclients "64" +exec server.cfg +map_rotate`.
 
-## Testing
+## HTTP file server
 
-1. Make sure you [updated your COD4 Game to 1.8-19.0](#update-your-game)
-1. Launch the COD4 multiplayer game
-1. Click on **Join Game**
-1. Click on **Source** at the top until it's set on *Favourites*
-1. Click on **New Favourite** on the top right
-1. Enter your host LAN IP Address (i.e. `192.168.1.26`)
-    - Add the port if you run it on something else than port UDP 28960 (i.e. `192.168.1.26:28961`)
-1. Click on **Refresh** and try to connect to the server in the list
+The built-in HTTP server on port `8000` serves files from the `mods/` and `usermaps/` directories. Clients download custom content automatically when connecting.
 
-![COD4 screenshot](https://github.com/qdm12/cod4-docker/blob/master/images/test.png?raw=true)
+- **Disable:** `-e HTTP_SERVER=off`
+- **Change port:** `-p 9000:8000/tcp`
+- **Change root URL (e.g. behind a reverse proxy):** `-e ROOT_URL=/cod4`
+- **Security:** only `.ff` and `.iwd` file extensions are served; everything else returns HTTP 403
+
+Configure `sv_wwwBaseURL` in `server.cfg` to point clients to your server:
+
+```c
+set sv_allowdownload "1"
+set sv_wwwDownload "1"
+set sv_wwwBaseURL "http://youraddress:8000"
+set sv_wwwDlDisconnected "0"
+```
 
 ## Mods
 
-Assuming:
+Place your mod in `./mods/mymod/` and override the container command:
 
-- Your mod directory is `./mymod`
-- Your main mod configuration file is `./mymod/server.cfg`
+```bash
++set dedicated 2 +set sv_cheats "1" +set sv_maxclients "64" +set fs_game mods/mymod +exec server.cfg +map_rotate
+```
 
-Set the command line option to `+set dedicated 2+set sv_cheats "1"+set sv_maxclients "64"+set fs_game mods/mymod+exec server.cfg +map_rotate`
+## Write-protected arguments
 
-## Write protected args
+These parameters **cannot** be set in `server.cfg` — they must be passed in the command line:
 
-The following parameters are write protected and **can't be placed in the server configuration file**,
-and must be in the command passed to the container:
+| Argument | Description |
+|---|---|
+| `+set dedicated 2` | 2 = public, 1 = LAN, 0 = local |
+| `+set sv_cheats "1"` | Enable cheats |
+| `+set sv_maxclients "64"` | Max player count |
+| `+exec server.cfg` | Load config file |
+| `+set fs_game mods/mymod` | Use a custom mod |
+| `+map_rotate` / `+map <name>` | Must be the **last** argument |
 
-- `+set dedicated 2` - 2: open to internet, 1: LAN, 0: localhost
-- `+set sv_cheats "1"` - 1 to allow cheats, 0 otherwise
-- `+set sv_maxclients "64"` - number of maximum clients
-- `+exec server.cfg` if using a configuration file
-- `+set fs_game mods/mymod` if using a custom mod
-- `+set com_hunkMegs "512"` don't use if not needed
-- `+set net_ip 127.0.0.1` don't use if not needed
-- `+set net_port 28961` don't use if not needed
-- `+map_rotate` OR i.e. `+map mp_shipment` **should be the last launch argument**
+## Environment variables
 
-By default, the Docker image uses [this command](https://github.com/qdm12/cod4-docker/blob/master/Dockerfile#L68).
+| Variable | Default | Description |
+|---|---|---|
+| `HTTP_SERVER` | `on` | Enable/disable the built-in HTTP file server |
+| `ROOT_URL` | `/` | Root URL prefix for the HTTP server (useful behind a reverse proxy) |
 
-## TODOs
+## Architecture
 
-- UDP proxy for Windows
-- Reload ability of cod4x
-- Docker Healthcheck + HTTP healthcheck endpoint (i.e. for K8s)
-- Add extra ping with udp proxy
-- More env variables
-  - Plugins
-- [Plugins](https://hub.docker.com/r/callofduty4x/cod4x18-server/)
-- Built-in mods?
+```
+Entrypoint (Go binary)
+    │
+    ├─ 1. Verify file permissions (read/write/exec)
+    ├─ 2. Copy default Cod4x files if missing
+    ├─ 3. Parse environment config
+    ├─ 4. Launch cod4x18_dedrun subprocess
+    └─ 5. Start HTTP file server (if enabled)
+         └─ Serves mods/*.ff and usermaps/*.iwd
+```
+
+The Go entrypoint handles graceful shutdown, log streaming, and crash recovery. The Cod4x server binary runs in the foreground.
+
+## Build from source
+
+```bash
+docker build -t cod4 .
+docker run cod4 +map mp_shipment
+```
+
+### Build arguments
+
+| Argument | Default | Description |
+|---|---|---|
+| `UID` | `1000` | Container user ID |
+| `GID` | `1000` | Container group ID |
+| `COD4X_VERSION` | `21.2` | Cod4x server release version |
+
+## Updating the client
+
+1. Update your COD4 game to version 1.7
+2. Download the [Cod4x client ZIP](https://cod4x.me/downloads/cod4x_client_20_1.zip)
+3. Extract to your game directory
+4. Run `install.cmd`
+5. Version `20.1` should appear in the bottom-right corner of the multiplayer menu
+
+## Testing
+
+1. Launch COD4 multiplayer
+2. **Join Game** → **Source** → *Favourites*
+3. **New Favourite** → enter your host LAN IP
+4. **Refresh** and connect
+
+![COD4 screenshot](images/test.png)
+
+## Use GitHub Container Registry
+
+Pull from `ghcr.io` instead of Docker Hub:
+
+```bash
+docker pull ghcr.io/qdm12/cod4-docker:latest
+```
 
 ## Acknowledgements
 
-- Credits to the developers of Cod4x server
-- The help I had on [Cod4x.me forums](https://cod4x.me/index.php?/forums/)
+- [Cod4x server](https://github.com/callofduty4x/CoD4x_Server) developers
+- [Cod4x.me](https://cod4x.me) community
