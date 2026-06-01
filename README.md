@@ -2,10 +2,14 @@
 
 <p align="center"><img src="images/logo.jpg" alt="Banner"></p>
 
+<p align="center">
+
 [![Build status](https://github.com/nooblk-98/cod4-docker/actions/workflows/release.yml/badge.svg)](https://github.com/nooblk-98/cod4-docker/actions/workflows/release.yml)
 [![GitHub release](https://img.shields.io/github/v/release/nooblk-98/cod4-docker)](https://github.com/nooblk-98/cod4-docker/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/lahiru98s/cod4.svg)](https://hub.docker.com/r/lahiru98s/cod4)
 [![Image size](https://img.shields.io/docker/image-size/lahiru98s/cod4/latest)](https://hub.docker.com/r/lahiru98s/cod4)
+
+</p>
 
 Call of Duty 4: Modern Warfare dedicated server in a Docker image using the [CoD4X 21.2](https://github.com/callofduty4x/CoD4x_Server) community server fork.
 
