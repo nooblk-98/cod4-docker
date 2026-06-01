@@ -1,6 +1,6 @@
 # COD4 Docker Dedicated Server
 
-![Banner](images/logo.jpg)
+<p align="center"><img src="images/logo.jpg" alt="Banner"></p>
 
 [![Build status](https://github.com/nooblk-98/cod4-docker/actions/workflows/release.yml/badge.svg)](https://github.com/nooblk-98/cod4-docker/actions/workflows/release.yml)
 [![GitHub release](https://img.shields.io/github/v/release/nooblk-98/cod4-docker)](https://github.com/nooblk-98/cod4-docker/releases)
