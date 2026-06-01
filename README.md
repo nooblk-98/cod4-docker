@@ -1,6 +1,6 @@
 # COD4 Docker Dedicated Server
 
-<p align="center"><img src="images/logo.jpg" alt="Banner"></p>
+<p align="center"><img src="images/logo.jpeg" alt="Banner"></p>
 
 <p align="center">
 
